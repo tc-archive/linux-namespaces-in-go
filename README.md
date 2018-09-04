@@ -1,6 +1,7 @@
 # Linux Namespaces in Go
 
-Playing around with the cool tutorial by Ed King and published on Medium.
+Playing around with the cool tutorial by Ed King and published on Medium. The original repo can be found [here](https://github.com/teddyking/ns-process).
+
 
 #### The Golang Linux Namespaces Tutorial
 * __[Namespaces in Go 1 - Intro](https://medium.com/@teddyking/linux-namespaces-850489d3ccf)__ - A short introduction. Part 1.
