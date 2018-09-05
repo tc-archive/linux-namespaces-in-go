@@ -44,13 +44,31 @@ func main() {
 	cmd.Env = []string{"PS1=-[ns-process]- # "}
 	// SysProcAttr allows attributes to be set on commands.
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		// The UTS namespace provides isolation of the 'hostname' and 'domainname'
-		// system identifiers.
+		Cloneflags:
+		// When requesting a new User namespace alongside other namespaces, the
+		// User namespace will be created first. User namespaces can be created without
+		// root permissions, which means sudo can now be dropped when the new process
+		// is created.
 		//
-		// Changing the hostname inside the new shell does not affect the hostname
-		// of the calling process.
-		Cloneflags: syscall.CLONE_NEWUTS,
+		// A new User namespace - but by default the process will have no uid, gid, or groups.
+		// -[ns-process]- # id
+		syscall.CLONE_NEWUSER |
+			// A new Mount namespace - but by default the process will use the host's mounts and rootfs.
+			// -[ns-process]- # ls /
+			syscall.CLONE_NEWNS |
+			// A new UTS namespace - but by default the process will only have the loopback interface.
+			// -[ns-process]- # ip link show
+			syscall.CLONE_NEWUTS |
+			syscall.CLONE_NEWIPC |
+			// A new UTS namespace - but by default the process will only have the loopback interface.
+			// -[ns-process]- # ip link show
+			syscall.CLONE_NEWNET |
+			syscall.CLONE_NEWPID,
 	}
+
+	// We’ve requested a new PID namespace (CLONE_NEWPID) but haven't mounted a new /proc filesystem
+
+	// We’ve requested a new User namespace (CLONE_NEWUSER) but have failed to provide a UID/GID mapping
 
 	// cmd.Run() invokes the clone() syscall. The specified Cloneflags are used
 	// to modify the behaviour of the clone() operation.

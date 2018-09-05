@@ -6,9 +6,10 @@ PHONY: build
 build:
 	go build linux-namespace.go
 
+# NB: Requires 'sudo' if no new User namespace is created.
 PHONY: run
 run: build
-	sudo ./linux-namespace
+	./linux-namespace
 
 PHONY: clean
 clean:

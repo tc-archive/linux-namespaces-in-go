@@ -1,3 +1,6 @@
+
+linux-namespace
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
