@@ -56,13 +56,17 @@ func main() {
 			// A new Mount namespace - but by default the process will use the host's mounts and rootfs.
 			// -[ns-process]- # ls /
 			syscall.CLONE_NEWNS |
-			// A new UTS namespace - but by default the process will only have the loopback interface.
-			// -[ns-process]- # ip link show
+			// A new UTS namespace - but by default the process will will use the host's hostname and domainname.
+			// -[ns-process]- # hostname && domainname
 			syscall.CLONE_NEWUTS |
+			// A new IPC namespace - but by default the process will have no messages queues, shared memory segments, or, semaphore arrays..
+			// -[ns-process]- # ipcs
 			syscall.CLONE_NEWIPC |
 			// A new UTS namespace - but by default the process will only have the loopback interface.
 			// -[ns-process]- # ip link show
 			syscall.CLONE_NEWNET |
+			// A new PID namespace - but by default a new /proc filesystem has not be mounted.
+			// -[ns-process]- # ls /proc
 			syscall.CLONE_NEWPID,
 	}
 
