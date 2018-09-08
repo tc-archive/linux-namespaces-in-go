@@ -48,7 +48,8 @@ func main() {
 
 	// Create a new shell process with io streams and custom prompt.
 	// NB: USe rexec instead of exec to allow safe pre-initialisation of namespaces.
-	cmd := reexec.Command("nsInitialisation")
+	rootfsPath := "/tmp/ns-process/rootfs"
+	cmd := reexec.Command("nsInitialisation", rootfsPath)
 	// cmd := exec.Command("/bin/sh")
 
 	cmd.Stdin = os.Stdin
@@ -111,7 +112,22 @@ func main() {
 // An initialisation function for rexec.
 //
 func nsInitialisation() {
-	fmt.Printf("\n>> namespace setup code goes here <<\n\n")
+	fmt.Printf("\n>> initialising namespace <<\n\n")
+
+	newrootPath := os.Args[1]
+
+	// Mount a new proc filesystem
+	if err := mountProc(newrootPath); err != nil {
+		fmt.Printf("Error mounting /proc - %s\n", err)
+		os.Exit(1)
+	}
+
+	// Pivot root on new mountspace.
+	if err := pivotRoot(newrootPath); err != nil {
+		fmt.Printf("Error running pivot_root - %s\n", err)
+		os.Exit(1)
+	}
+
 	nsRun()
 }
 
@@ -140,43 +156,4 @@ func nsRun() {
 		fmt.Printf("Error running the /bin/sh command - %s\n", err)
 		os.Exit(1)
 	}
-}
-
-// User namespace *************************************************************
-//
-// * The User namespace provides isolation of UIDs and GIDs.
-//
-// * There can be multiple, distinct User namespaces in use on the same host
-//   at any given time.
-//
-// * Every Linux process runs in one of these User namespaces.
-//
-// * User namespaces allow for the UID of a process in User namespace 1 to be
-//   different to the UID for the same process in User namespace 2.
-//
-// * UID/GID mapping provides a mechanism for mapping IDs between two separate
-//   User namespaces. The parent process sees the original ID, the child the
-//   mapped ID.
-//
-// See user_namespaces(7).
-//
-func createSysProcIDMappings(containerUID, containerGID int) ([]syscall.SysProcIDMap, []syscall.SysProcIDMap) {
-	// Create 'id' usernamespace mapping.
-	uidMappings := []syscall.SysProcIDMap{
-		{
-			ContainerID: containerUID, // The uid inside the new User namespace.
-			HostID:      os.Getuid(),  // Ho
-			Size:        1,            // Can be used to map a range of ids
-		},
-	}
-	// Create 'gid' usernamespace mapping.
-	gidMapMappings := []syscall.SysProcIDMap{
-		{
-			ContainerID: containerGID, // The gid inside the new User namespace.
-			HostID:      os.Getgid(),
-			Size:        1, // Can be used to map a range of ids
-		},
-	}
-
-	return uidMappings, gidMapMappings
 }
