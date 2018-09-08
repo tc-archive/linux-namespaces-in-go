@@ -5,6 +5,16 @@ import (
 	"os"
 	"os/exec"
 	"syscall"
+
+	// 'reexec'  provides a convenient way for an executable to “re-exec” itself.
+	// It is required to circumvent a limitation in how Go handles process forking.
+	// *exec.Cmd.Run() has no mechanism to allow new namespace properties to be
+	// altered before the new proccess is creates. reexec allows an 'initialisation'
+	// function to be specified that is invoked before the new process is created.
+	//
+	// Installed via dep: 'dep ensure -add github.com/docker/docker/pkg/reexec'
+	//
+	reexec "github.com/docker/docker/pkg/reexec"
 )
 
 // Namespaces provide a way to limit what a process can see, to make it appear
@@ -37,7 +47,10 @@ func main() {
 	fmt.Println("Running linux-namespace...")
 
 	// Create a new shell process with io streams and custom prompt.
-	cmd := exec.Command("/bin/sh")
+	// NB: USe rexec instead of exec to allow safe pre-initialisation of namespaces.
+	cmd := reexec.Command("nsInitialisation")
+	// cmd := exec.Command("/bin/sh")
+
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -47,6 +60,8 @@ func main() {
 	// the container.
 	// ```cat /etc/passwd | awk -F: '{printf "%s:%s:%s\n",$1,$3,$4}'````
 	uidMappings, gidMapMappings := createSysProcIDMappings(0, 0)
+
+	// allows us to run code after the namespace creation but before the process starts. This is where reexec comes in.
 
 	// SysProcAttr allows attributes to be set on commands.
 	cmd.SysProcAttr = &syscall.SysProcAttr{
@@ -91,7 +106,43 @@ func main() {
 	}
 }
 
-// User namespace
+// Reexec Execution ***********************************************************
+
+// An initialisation function for rexec.
+//
+func nsInitialisation() {
+	fmt.Printf("\n>> namespace setup code goes here <<\n\n")
+	nsRun()
+}
+
+// Register the the default initialisation function.
+//
+func init() {
+	reexec.Register("nsInitialisation", nsInitialisation)
+	if reexec.Init() {
+		// Prevents infinite loop initialisation.
+		os.Exit(0)
+	}
+}
+
+// Execute the rexec function.
+//
+func nsRun() {
+	cmd := exec.Command("/bin/sh")
+
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	cmd.Env = []string{"PS1=-[ns-process]- # "}
+
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Error running the /bin/sh command - %s\n", err)
+		os.Exit(1)
+	}
+}
+
+// User namespace *************************************************************
 //
 // * The User namespace provides isolation of UIDs and GIDs.
 //
