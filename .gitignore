@@ -2,6 +2,7 @@
 .vscode/
 assets/netsetgo
 linux-namespace
+dist
 
 # Binaries for programs and plugins
 *.exe

@@ -1,4 +1,4 @@
-package main
+package ns
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 
 // Consider the network to be ready once a veth interface has appeared in the new Network namespace.
 //
-func waitForNetwork() error {
+func WaitForNetwork() error {
 	maxWait := time.Second * 3
 	checkInterval := time.Second
 	timeStarted := time.Now()

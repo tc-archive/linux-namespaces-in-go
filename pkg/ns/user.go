@@ -1,4 +1,4 @@
-package main
+package ns
 
 import (
 	"os"
@@ -23,7 +23,7 @@ import (
 //
 // See user_namespaces(7).
 //
-func createSysProcIDMappings(containerUID, containerGID int) ([]syscall.SysProcIDMap, []syscall.SysProcIDMap) {
+func CreateSysProcIDMappings(containerUID, containerGID int) ([]syscall.SysProcIDMap, []syscall.SysProcIDMap) {
 	// Create 'id' usernamespace mapping.
 	uidMappings := []syscall.SysProcIDMap{
 		{

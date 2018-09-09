@@ -1,4 +1,4 @@
-package main
+package ns
 
 import (
 	"os"
@@ -22,7 +22,7 @@ import (
 //
 // * No other filesystem may be mounted on 'putold'.
 //
-func pivotRoot(newroot string) error {
+func PivotRoot(newroot string) error {
 	putold := filepath.Join(newroot, "/.pivot_root")
 
 	// bind mount newroot to itself - this is a slight hack needed to satisfy the
@@ -63,7 +63,7 @@ func pivotRoot(newroot string) error {
 
 // Mount a 'proc' file system onto /proc.
 //
-func mountProc(newroot string) error {
+func MountProc(newroot string) error {
 	source := "proc"
 	target := filepath.Join(newroot, "/proc")
 	fstype := "proc"
