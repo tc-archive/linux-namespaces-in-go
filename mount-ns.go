@@ -61,7 +61,7 @@ func pivotRoot(newroot string) error {
 	return nil
 }
 
-//
+// Mount a 'proc' file system onto /proc.
 //
 func mountProc(newroot string) error {
 	source := "proc"
@@ -77,19 +77,3 @@ func mountProc(newroot string) error {
 
 	return nil
 }
-
-// func exitIfRootfsNotFound(rootfsPath string) {
-// 	if _, err := os.Stat(rootfsPath); os.IsNotExist(err) {
-// 		usefulErrorMsg := fmt.Sprintf(`
-// "%s" does not exist.
-// Please create this directory and unpack a suitable root filesystem inside it.
-// An example rootfs, BusyBox, can be downloaded and unpacked as follows:
-// wget "https://raw.githubusercontent.com/teddyking/ns-process/4.0/assets/busybox.tar"
-// mkdir -p %s
-// tar -C %s -xf busybox.tar
-// `, rootfsPath, rootfsPath, rootfsPath)
-
-// 		fmt.Println(usefulErrorMsg)
-// 		os.Exit(1)
-// 	}
-// }
