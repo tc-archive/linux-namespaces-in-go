@@ -11,9 +11,10 @@ build-mount: build
 	mkdir -p /tmp/ns-process/rootfs
 	tar -C /tmp/ns-process/rootfs -xf assets/busybox.tar
 
+
 # NB: Requires 'sudo' if no new User namespace is created.
 PHONY: run
-run: build-mount¬=
+run: build-mount
 	./linux-namespace
 
 PHONY: clean

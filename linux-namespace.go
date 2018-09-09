@@ -76,7 +76,7 @@ func main() {
 		// -[ns-process]- # id || echo $USER || whoami
 		syscall.CLONE_NEWUSER |
 			// A new Mount namespace - but by default the process will use the host's mounts and rootfs.
-			// -[ns-process]- # ls /
+			// -[ns-process]- # ls / || car /proc
 			syscall.CLONE_NEWNS |
 			// A new UTS namespace - but by default the process will will use the host's hostname and domainname.
 			// -[ns-process]- # hostname && domainname
@@ -85,7 +85,7 @@ func main() {
 			// -[ns-process]- # ipcs
 			syscall.CLONE_NEWIPC |
 			// A new UTS namespace - but by default the process will only have the loopback interface.
-			// -[ns-process]- # ip link show
+			// -[ns-process]- # ip link show || route || ping 10.10.10.1
 			syscall.CLONE_NEWNET |
 			// A new PID namespace - but by default a new /proc filesystem has not be mounted.
 			// -[ns-process]- # ls /proc
@@ -94,15 +94,35 @@ func main() {
 		GidMappings: gidMapMappings,
 	}
 
-	// We’ve requested a new PID namespace (CLONE_NEWPID) but haven't mounted a new /proc filesystem
-
-	// We’ve requested a new User namespace (CLONE_NEWUSER) but have failed to provide a UID/GID mapping
-
 	// cmd.Run() invokes the clone() syscall. The specified Cloneflags are used
 	// to modify the behaviour of the clone() operation.
 	// This controls which namespaces the process to be executed in.
-	if err := cmd.Run(); err != nil {
-		fmt.Printf("Error running the /bin/sh command - %s\n", err)
+	//
+	// Instead of running the command in one step, we Start() it and Wait() for
+	// any initialisation to complete before we continue.
+	//
+	// if err := cmd.Run(); err != nil {
+	// 	fmt.Printf("Error running the /bin/sh command - %s\n", err)
+	// 	os.Exit(1)
+	// }
+
+	if err := cmd.Start(); err != nil {
+		fmt.Printf("Error starting the reexec.Command - %s\n", err)
+		os.Exit(1)
+	}
+
+	// run netsetgo using default args
+	// note that netsetgo must be owned by root with the setuid bit set
+	pid := fmt.Sprintf("%d", cmd.Process.Pid)
+	netsetgoPath := "./assets/netsetgo"
+	netsetgoCmd := exec.Command(netsetgoPath, "-pid", pid)
+	if err := netsetgoCmd.Run(); err != nil {
+		fmt.Printf("Error running netsetgo - %s\n", err)
+		os.Exit(1)
+	}
+
+	if err := cmd.Wait(); err != nil {
+		fmt.Printf("Error waiting for the reexec.Command - %s\n", err)
 		os.Exit(1)
 	}
 }
@@ -125,6 +145,12 @@ func nsInitialisation() {
 	// Pivot root on new mountspace.
 	if err := pivotRoot(newrootPath); err != nil {
 		fmt.Printf("Error running pivot_root - %s\n", err)
+		os.Exit(1)
+	}
+
+	// Wait for new network bridge device to come up.
+	if err := waitForNetwork(); err != nil {
+		fmt.Printf("Error waiting for network - %s\n", err)
 		os.Exit(1)
 	}
 
